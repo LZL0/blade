@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Facade;
 use Illuminate\View\Compilers\BladeCompiler;
 use Illuminate\View\Factory;
 use Illuminate\View\ViewServiceProvider;
+use function Couchbase\defaultDecoder;
 
 class Blade implements FactoryContract
 {
@@ -127,6 +128,21 @@ class Blade implements FactoryContract
                 'view.compiled' => $cachePath,
             ];
         }, true);
+
+        $this->container->singleton(FactoryContract::class, function () {
+            return $this;
+        });
+
+        $this->container->singleton(Application::class, function () {
+            return new class {
+                public function getNamespace() {
+                    $composer = json_decode(file_get_contents('composer.json'), true);
+                    return count($composer['autoload']['psr-4'] ?? []) ? array_keys($composer['autoload']['psr-4'])[0] : null;
+                }
+            };
+        });
+
+        Container::setInstance($this->container);
         
         Facade::setFacadeApplication($this->container);
     }

@@ -16,6 +16,7 @@ class BladeTest extends TestCase
 
     public function setUp()
     {
+        exec('rm -rf tests/cache/*.php');
         $this->blade = new Blade('tests/views', 'tests/cache');
 
         $this->blade->directive('datetime', function ($expression) {
@@ -88,7 +89,7 @@ class BladeTest extends TestCase
             $view->with('name', 'Jane Doe and ' . $view->offsetGet('name'));
         });
 
-        $output = $this->blade->make('variables');
+        $output = $this->blade->make('variables')->render();
         $this->assertEquals('hello Jane Doe and John Doe', trim($output));
     }
 
@@ -159,9 +160,21 @@ class BladeTest extends TestCase
             'users' => $users,
             'name' => '<strong>John</strong>',
             'authenticated' => false,
-        ]);
+        ])->render();
 
         $this->assertEquals($output, $this->expected('other'));
+    }
+
+    public function testAnonymousViewComponent()
+    {
+        $output = $this->blade->make("basic-component", ['id' => 'John Doe', 'class' => 'foo', 'content' => 'Jane Doe']);
+        $this->assertEquals(trim($output), $this->expected('basic-component'));
+    }
+
+    public function testExtendsViewComponent()
+    {
+        $output = $this->blade->make("extends-component", ['title' => 'John Doe', 'content' => 'Jane Doe']);
+        $this->assertEquals(trim($output), $this->expected('extends-component'));
     }
 
     private function expected(string $file): string
